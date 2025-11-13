@@ -1,2 +1,4 @@
 hello (sorry i type without shift) this is a line of kernels i make for my OS called Chocolate OS (or Choco OS for short) but the kernels start at 0.8.X anything before 0.8.X
-doesnt realy work as a kernel (0.1 is just broken ngl) but every kernel was still made with the intent of being used in future me                                                                                                  
+doesnt realy work as a kernel (0.1 is just broken ngl) but every kernel was still made with the intent of being used in future me 
+
+the 0.1 kernel is in kernel/0.1
