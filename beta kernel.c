@@ -108,10 +108,10 @@ int strncmp(const char *a, const char *b, int n) {
 }
 
 void kernel_main() {
-    for (int i = 0; i < VGA_COLS * VGA_ROWS; ++i) {
+    for (int i = 0; i < VGA_COLS * VGA_ROMS; ++i) {
         VGA_BUFFER[i * 2] = ' ';
         VGA_BUFFER[i * 2 + 1] = 0x07;
     }
-    cursor = 0;
-    shell();
+    cursor = 0
+        shell();
 }
