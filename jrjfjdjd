@@ -1,37 +1,77 @@
-# ------------------------
-# ChocolateOS v1.0 (Pure ASM)
-# ------------------------
+; kernel.asm - ChocolateOS tiny kernel + Csh shell
+[BITS 16]
+[ORG 0x1000]
 
-ASM = nasm
-IMG = choco.img
-BIN_BOOT = boot.bin
-BIN_KERNEL = kernel.bin
-BOOT = bootloader.asm
-KERNEL = kernel.asm
+start:
+    cli                     ; disable interrupts
+    mov ax, 0x0000
+    mov ds, ax
+    mov es, ax
+    mov ss, 0x0000
+    mov sp, 0x7C00          ; simple stack at 0x7C00
+    sti                     ; enable interrupts
 
-# Default target
-all: $(IMG)
+    ; ----------------------
+    ; Print kernel boot message
+    mov si, msg_boot
+    call print_string
+    call wait_2s            ; wait so we can see message
 
-# Compile bootloader
-$(BIN_BOOT): $(BOOT)
-	$(ASM) -f bin $< -o $@
+    ; ----------------------
+    ; Start simple Csh shell
+shell_loop:
+    mov si, prompt
+    call print_string
 
-# Compile kernel
-$(BIN_KERNEL): $(KERNEL)
-	$(ASM) -f bin $< -o $@
+get_key:
+    mov ah, 0               ; BIOS keyboard read
+    int 0x16
+    cmp al, 0
+    je get_key
+    call print_char
+    jmp shell_loop
 
-# Build raw disk image
-$(IMG): $(BIN_BOOT) $(BIN_KERNEL)
-	# pad bootloader to 512 bytes
-	dd if=/dev/zero of=boot_padded.bin bs=512 count=1
-	dd if=$(BIN_BOOT) of=boot_padded.bin conv=notrunc
-	# combine bootloader + kernel
-	cat boot_padded.bin $(BIN_KERNEL) > $(IMG)
+; ----------------------
+; helper routines
+print_string:
+    mov ah, 0x0E
+.print_char:
+    lodsb
+    cmp al, 0
+    je .done
+    int 0x10
+    jmp .print_char
+.done:
+    ret
 
-# Run in QEMU
-run: $(IMG)
-	qemu-system-i386 -drive format=raw,file=$(IMG)
+print_char:
+    mov ah, 0x0E
+    int 0x10
+    ret
 
-# Clean
-clean:
-	rm -f *.bin *.img boot_padded.bin
+wait_2s:
+    mov cx, 36             ; ~36 BIOS ticks ≈ 2s
+.wait_tick:
+    push cx
+    call wait_bios_tick
+    pop cx
+    loop .wait_tick
+    ret
+
+wait_bios_tick:
+    pusha
+    mov ah, 0
+    int 0x1A
+    mov bx, dx
+.wait_next:
+    mov ah, 0
+    int 0x1A
+    cmp dx, bx
+    je .wait_next
+    popa
+    ret
+
+msg_boot db "ChocolateOS Kernel Booted...", 0
+prompt   db "P:|^> ", 0
+
+times 4096-($-$$) db 0  ; pad kernel to 4KB (optional)
