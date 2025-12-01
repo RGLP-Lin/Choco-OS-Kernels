@@ -7,10 +7,9 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, 0x0000
-    mov sp, 0x9000      ; safer stack
+    mov sp, 0x9000
     sti
 
-    ; Print boot message
     mov si, msg_boot
     call print_string
     call wait_2s
@@ -28,7 +27,6 @@ get_key:
     jmp shell_loop
 
 ; ----------------------
-; helpers
 print_string:
     mov ah, 0x0E
 .print_char:
@@ -46,22 +44,3 @@ print_char:
     ret
 
 wait_2s:
-    mov cx, 36
-.wait_tick:
-    call wait_bios_tick
-    loop .wait_tick
-    ret
-
-wait_bios_tick:
-    pusha
-    mov ah, 0
-.wait_loop:
-    int 0x1A
-    jmp .wait_loop   ; busy wait 1 tick
-    popa
-    ret
-
-msg_boot db "ChocolateOS Kernel Booted...", 0
-prompt   db "P:|^> ", 0
-
-times 4096-($-$$) db 0
