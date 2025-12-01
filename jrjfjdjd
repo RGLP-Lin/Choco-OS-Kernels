@@ -1,30 +1,26 @@
-; kernel.asm - ChocolateOS tiny kernel + Csh shell
 [BITS 16]
 [ORG 0x1000]
 
 start:
-    cli                     ; disable interrupts
+    cli
     mov ax, 0x0000
     mov ds, ax
     mov es, ax
     mov ss, 0x0000
-    mov sp, 0x7C00          ; simple stack at 0x7C00
-    sti                     ; enable interrupts
+    mov sp, 0x9000      ; safer stack
+    sti
 
-    ; ----------------------
-    ; Print kernel boot message
+    ; Print boot message
     mov si, msg_boot
     call print_string
-    call wait_2s            ; wait so we can see message
+    call wait_2s
 
-    ; ----------------------
-    ; Start simple Csh shell
 shell_loop:
     mov si, prompt
     call print_string
 
 get_key:
-    mov ah, 0               ; BIOS keyboard read
+    mov ah, 0
     int 0x16
     cmp al, 0
     je get_key
@@ -32,13 +28,13 @@ get_key:
     jmp shell_loop
 
 ; ----------------------
-; helper routines
+; helpers
 print_string:
     mov ah, 0x0E
 .print_char:
     lodsb
-    cmp al, 0
-    je .done
+    or al, al
+    jz .done
     int 0x10
     jmp .print_char
 .done:
@@ -50,28 +46,22 @@ print_char:
     ret
 
 wait_2s:
-    mov cx, 36             ; ~36 BIOS ticks ≈ 2s
+    mov cx, 36
 .wait_tick:
-    push cx
     call wait_bios_tick
-    pop cx
     loop .wait_tick
     ret
 
 wait_bios_tick:
     pusha
     mov ah, 0
+.wait_loop:
     int 0x1A
-    mov bx, dx
-.wait_next:
-    mov ah, 0
-    int 0x1A
-    cmp dx, bx
-    je .wait_next
+    jmp .wait_loop   ; busy wait 1 tick
     popa
     ret
 
 msg_boot db "ChocolateOS Kernel Booted...", 0
 prompt   db "P:|^> ", 0
 
-times 4096-($-$$) db 0  ; pad kernel to 4KB (optional)
+times 4096-($-$$) db 0
