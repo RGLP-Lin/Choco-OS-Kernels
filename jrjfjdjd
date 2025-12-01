@@ -44,3 +44,26 @@ print_char:
     ret
 
 wait_2s:
+    mov cx, 36
+.wait_tick:
+    call wait_bios_tick
+    loop .wait_tick
+    ret
+
+wait_bios_tick:
+    pusha
+    mov ah, 0
+    int 0x1A
+    mov bx, dx
+.wait_next:
+    mov ah, 0
+    int 0x1A
+    cmp dx, bx
+    je .wait_next
+    popa
+    ret
+
+msg_boot db "ChocolateOS Kernel Booted...", 0
+prompt   db "P:|^> ", 0
+
+times 4096-($-$$) db 0
